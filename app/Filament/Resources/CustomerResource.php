@@ -2,20 +2,22 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Imports\CategoryImporter;
-use App\Filament\Resources\CategoryResource\Pages;
-use App\Filament\Resources\CategoryResource\RelationManagers;
-use App\Models\Category;
+use App\Filament\Resources\CustomerResource\Pages;
+use App\Filament\Resources\CustomerResource\RelationManagers;
+use App\Models\Customer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class CategoryResource extends Resource
+class CustomerResource extends Resource
 {
-    protected static ?string $model = Category::class;
-    protected static ?string $navigationIcon = 'heroicon-o-tag';
+    protected static ?string $model = Customer::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
@@ -25,7 +27,10 @@ class CategoryResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->label(__('messages.name'))
                     ->required()
-                    ->unique()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('tax_number')
+                    ->label(__('messages.tax_number'))
+                    ->required()
                     ->maxLength(255),
             ]);
     }
@@ -37,24 +42,20 @@ class CategoryResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label(__('messages.name'))
                     ->searchable(),
+                Tables\Columns\TextColumn::make('tax_number')
+                    ->label(__('messages.tax_number'))
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label(__('messages.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->label(__('messages.updated_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
-            ])
-            ->headerActions([
-                Tables\Actions\ImportAction::make(__('messages.import_categories'))
-                ->importer(CategoryImporter::class)
-                ->color('info'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -70,28 +71,27 @@ class CategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ManageCategories::route('/'),
+            'index' => Pages\ManageCustomers::route('/'),
         ];
     }
-
     public static function getLabel(): ?string
     {
-        return __('messages.categories');
+        return __('messages.customers');
     }
     public static function getModelLabel(): string
     {
-        return __('messages.category');
+        return __('messages.customer');
     }
     public static function getPluralLabel(): string
     {
-        return __('messages.categories');
+        return __('messages.customers');
     }
     public static function getTitleCasePluralModelLabel(): string
     {
-        return __('messages.the_categories');
+        return __('messages.the_customers');
     }
     public static function getNavigationGroup(): string
     {
-        return __('messages.products_management');
+        return __('messages.customers_management');
     }
 }

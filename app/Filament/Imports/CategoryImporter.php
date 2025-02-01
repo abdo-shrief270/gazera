@@ -16,20 +16,10 @@ class CategoryImporter extends Importer
     {
         return [
             ImportColumn::make('name')
+                ->label(__('messages.name'))
                 ->requiredMapping()
                 ->rules(['required','unique:categories,name', 'max:255']),
         ];
-    }
-
-    public function resolveRecord(): ?Category
-    {
-        if ($this->options['updateExisting'] ?? false) {
-            return Category::firstOrNew([
-                'name' => $this->data['name'],
-            ]);
-        }
-
-        return new Category();
     }
 
     public static function getCompletedNotificationBody(Import $import): string
@@ -41,12 +31,5 @@ class CategoryImporter extends Importer
         }
 
         return $body;
-    }
-    public static function getOptionsFormComponents(): array
-    {
-        return [
-            Checkbox::make('updateExisting')
-                ->label(__('messages.Update_existing_records')),
-        ];
     }
 }
