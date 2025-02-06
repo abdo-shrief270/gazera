@@ -1,0 +1,24 @@
+# Disable directory listing
+Options -Indexes
+
+# Prevent access to sensitive files
+<FilesMatch "\.(env|json|config.js|lock|gitignore|gitattributes|editorconfig|yml|xml|txt|md|log|sql)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    Options +FollowSymLinks
+    RewriteEngine On
+
+    # Set PHP timezone to Africa/Cairo
+    php_value date.timezone "Africa/Cairo"
+    #php_value date.timezone "Africa/Cairo"
+
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+
+    RewriteRule ^(.*)$ /public/$1
+    RewriteRule ^(/)?$ public/index.php [L]
+</IfModule>
