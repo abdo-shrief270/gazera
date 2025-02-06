@@ -40,4 +40,8 @@ return
     'net_price'=>'السعر الصافي',
     'total_fee'=>'اجمالي الضرائب '.env('TAX_FEE').'%',
     'invoice_number'=>'رقم الفاتورة',
+    'details'=>'التفاصيل',
+    'edit'=>'تعديل',
+    'description'=>'الوصف',
+    'print_invoice'=>'طباعة الفاتورة',
 ];

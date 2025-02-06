@@ -5,15 +5,20 @@ namespace App\Filament\Resources\InvoiceResource\Pages;
 use App\Filament\Resources\InvoiceResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Contracts\Support\Htmlable;
 
 class EditInvoice extends EditRecord
 {
     protected static string $resource = InvoiceResource::class;
 
-    protected function getHeaderActions(): array
+    public function getTitle(): string | Htmlable
     {
-        return [
-            Actions\DeleteAction::make(),
-        ];
+        $record=$this->getRecord();
+        return __('messages.edit') .' '. __('messages.invoice') .' '.'Gz'.sprintf("%06d", $record->invoice_number) ;
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
     }
 }

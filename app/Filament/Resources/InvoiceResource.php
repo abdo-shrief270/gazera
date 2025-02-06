@@ -28,8 +28,7 @@ class InvoiceResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('invoice_number')
                     ->label(__('messages.invoice_number'))
-                    ->disabled()
-                    ->formatStateUsing(fn()=>sprintf("%06d", Invoice::orderBy('id', 'desc')->first()?->invoice_number+1))
+                    ->default(fn()=>sprintf("%06d", Invoice::orderBy('id', 'desc')->first()?->invoice_number+1))
                     ->required()
                     ->columnSpan([
                         'md' => 1,
@@ -59,6 +58,7 @@ class InvoiceResource extends Resource
                     ]),
 
                 Forms\Components\Repeater::make('details')
+                    ->label(__('messages.details'))
                     ->relationship()
                     ->schema([
                         Forms\Components\Select::make('product_id')
@@ -73,32 +73,13 @@ class InvoiceResource extends Resource
                             ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                             ->searchable()
                             ->columnSpan([
-                                'md' => 3,
+                                'md' => 2,
                             ]),
-
-                        Forms\Components\TextInput::make('unit_price')
-                            ->label(__('messages.unit_price'))
-                            ->numeric()
-                            ->required()
-                            ->reactive()
-                            ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
-                                $quantity = $get('quantity') ?? 0;
-                                $price = $get('unit_price') ?? 0;
-                                $previousSubtotal = $get('subtotal') ?? 0; // Track previous subtotal
-                                $newSubtotal = $quantity * $price;
-
-                                // Update the repeater item's subtotal
-                                $set('subtotal', $newSubtotal);
-
-                                // Update the overall subtotal
-                                $set('../../subtotal', ($get('../../subtotal') - $previousSubtotal) + $newSubtotal);
-                                $set('../../total_fee', round($get('../../subtotal') * (env('TAX_FEE',14)/100),2));
-                                $set('../../total_price', $get('../../subtotal') + $get('../../total_fee'));
-                            })
+                        Forms\Components\TextInput::make('description')
+                            ->label(__('messages.description'))
                             ->columnSpan([
-                                'md' => 1,
-                            ])
-                            ->disabled(fn (Forms\Get $get) => !$get('product_id')),
+                                'md' => 2,
+                            ]),
 
                         Forms\Components\TextInput::make('quantity')
                             ->label(__('messages.quantity'))
@@ -125,9 +106,34 @@ class InvoiceResource extends Resource
                             ])
                             ->disabled(fn (Forms\Get $get) => !$get('product_id')),
 
+                        Forms\Components\TextInput::make('unit_price')
+                            ->label(__('messages.unit_price'))
+                            ->numeric()
+                            ->required()
+                            ->reactive()
+                            ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
+                                $quantity = $get('quantity') ?? 0;
+                                $price = $get('unit_price') ?? 0;
+                                $previousSubtotal = $get('subtotal') ?? 0; // Track previous subtotal
+                                $newSubtotal = $quantity * $price;
+
+                                // Update the repeater item's subtotal
+                                $set('subtotal', $newSubtotal);
+
+                                // Update the overall subtotal
+                                $set('../../subtotal', ($get('../../subtotal') - $previousSubtotal) + $newSubtotal);
+                                $set('../../total_fee', round($get('../../subtotal') * (env('TAX_FEE',14)/100),2));
+                                $set('../../total_price', $get('../../subtotal') + $get('../../total_fee'));
+                            })
+                            ->columnSpan([
+                                'md' => 1,
+                            ])
+                            ->disabled(fn (Forms\Get $get) => !$get('product_id')),
+
+
                         Forms\Components\TextInput::make('subtotal')
                             ->label(__('messages.sub_total'))
-                            ->formatStateUsing(fn (Forms\Get $get) => ($get('price') * $get('quantity')))
+                            ->formatStateUsing(fn (Forms\Get $get) => ($get('unit_price') * $get('quantity')))
                             ->reactive()
                             ->disabled()
                             ->numeric()
@@ -135,7 +141,7 @@ class InvoiceResource extends Resource
                             ->default(0)
                             ->required()
                             ->columnSpan([
-                                'md' => 3,
+                                'md' => 2,
                             ]),
                     ])
                     ->columns(8)
@@ -146,7 +152,7 @@ class InvoiceResource extends Resource
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('subtotal')
                     ->label(__('messages.sub_total'))
-                    ->formatStateUsing(fn (Forms\Get $get) => collect($get('details'))->sum(fn($item) => $item['price'] ?? 0))
+                    ->formatStateUsing(fn (Forms\Get $get) => collect($get('details'))->sum(fn($item) => $item['subtotal'] ?? 0))
                     ->reactive()
                     ->disabled()
                     ->numeric()
@@ -187,15 +193,29 @@ class InvoiceResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('invoice_number')
+                    ->label(__('messages.invoice_number'))
+                    ->state(fn($record)=>'Gz'.sprintf("%06d", $record->invoice_number))
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('customer.name')
+                    ->label(__('messages.the_customer'))
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('subtotal')
-                    ->numeric()
+                    ->label(__('messages.sub_total'))
+                    ->money('EGP')
+                    ->copyableState(true)
+                    ->color('warning')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('total_amount')
+                Tables\Columns\TextColumn::make('total_fee')
+                    ->label(__('messages.total_fee'))
+                    ->state(fn($record)=>$record->total_price - $record->subtotal)
+                    ->money('EGP')
+                    ->copyableState(true)
+                    ->color('danger')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('total_price')
+                    ->label(__('messages.total_price'))
                     ->money('EGP')
                     ->copyableState(true)
                     ->color('success')
@@ -214,6 +234,11 @@ class InvoiceResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('print_invoice')
+                    ->label(__('messages.print_invoice'))
+                    ->url(fn (Invoice $record) => route('print_invoice', $record))
+                    ->icon('heroicon-o-printer')
+                    ->openUrlInNewTab()
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -18,4 +18,10 @@ class CreateInvoice extends CreateRecord
     {
         return $this->getResource()::getUrl('index');
     }
+
+    protected function mutateFormDataBeforeCreate(array $data):array
+    {
+//        dd($data);
+        return $data;
+    }
 }
