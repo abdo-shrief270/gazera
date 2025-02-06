@@ -1,3 +1,6 @@
 <?php
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\InvoiceController;
 
-\Illuminate\Support\Facades\Route::get('{invoice}/print',[\App\Http\Controllers\InvoiceController::class,'printInvoice'])->name('print_invoice');
+Route::middleware(['auth'])->get('{invoice}/print', [InvoiceController::class, 'printInvoice'])
+    ->name('print_invoice');
